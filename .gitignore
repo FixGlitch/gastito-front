@@ -3,9 +3,9 @@
 node_modules/
 
 # Build outputs
-.next/
 dist/
 build/
+.next/
 out/
 
 # Environment variables
@@ -13,23 +13,11 @@ out/
 .env.local
 .env.*
 
-# Logs
-*.log
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
 
 # Python cache
 __pycache__/
@@ -37,11 +25,24 @@ __pycache__/
 *.pyo
 *.pyd
 
-# TypeScript/JavaScript
-*.tsbuildinfo
-*.js.map
-*.ts.map
+# Logs
+*.log
 
 # Temporary files
 *.tmp
+*.temp
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Package manager caches
+.npm/
+.yarn/
+.pnpm-store/
 ```

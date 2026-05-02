@@ -1,30 +1,41 @@
-import { cn, formatCurrencyARS } from '@lib/utils';
+import { cn } from '@lib/utils';
 
 export interface CurrencyInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   value: number;
-  onChange: (value: number) => void;
+  onValueChange: (value: number) => void;
   label?: string;
   error?: string;
   placeholder?: string;
+  locale?: string;
+  currency?: string;
 }
 
 export function CurrencyInput({
   value,
-  onChange,
+  onValueChange,
   label,
   error,
   placeholder = '$ 0,00',
   className,
+  locale = 'es-AR',
+  currency = 'ARS',
   ...props
 }: CurrencyInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/[^0-9,-]/g, '').replace(',', '.');
     const parsedValue = parseFloat(rawValue);
-    onChange(isNaN(parsedValue) ? 0 : parsedValue);
+    onValueChange(isNaN(parsedValue) ? 0 : parsedValue);
   };
 
-  const displayValue = value > 0 ? formatCurrencyARS(value).replace('$', '').trim() : '';
+  const displayValue = value > 0 
+    ? new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value).replace('$', '').trim()
+    : '';
 
   return (
     <div className="w-full">
@@ -41,7 +52,7 @@ export function CurrencyInput({
           type="text"
           inputMode="decimal"
           className={cn(
-            'w-full pl-8 pr-4 py-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200',
+            'w-full pl-8 pr-4 py-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200',
             error
               ? 'border-danger-500 focus:ring-danger-500'
               : 'border-gray-300 dark:border-gray-600',
