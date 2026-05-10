@@ -5,7 +5,7 @@ import { DashboardTemplate } from "@/components/templates/dashboard-template";
 import { ExpenseTable } from "@/components/organisms/expense-table";
 import { AddExpenseModal } from "@/components/molecules/add-expense-modal";
 import { AlertBanner } from "@/components/organisms/alert-banner";
-import { useExpenses, useDeleteExpense } from "@/lib/api/hooks/expenses";
+import { useExpenses, useDeleteExpense, useUpdateExpense } from "@/lib/api/hooks/expenses";
 import { Button } from "@/components/atoms/button";
 import {
   Select,
@@ -16,10 +16,16 @@ import {
 } from "@/components/atoms/select";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
-import { Plus, Filter, Loader2 } from "lucide-react";
-import type { Expense, ExpenseCategory, ExpenseFilters } from "@/types/expense";
-import { EXPENSE_CATEGORIES } from "@/types/expense";
+import { Plus, Filter, Loader2, Pencil, Trash2 } from "lucide-react";
+import type { Expense, ExpenseFilters } from "@/types/expense";
+import { DEFAULT_CATEGORIES } from "@/types/expense";
 import { getCurrentMonthISO } from "@/lib/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/atoms/dialog";
 
 const months = [
   { value: "2026-05", label: "Mayo 2026" },
@@ -31,12 +37,19 @@ const months = [
 
 export default function ExpensesPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editDate, setEditDate] = useState("");
   const [filters, setFilters] = useState<ExpenseFilters>({
     month: getCurrentMonthISO(),
   });
 
   const { data: expenses = [], isLoading } = useExpenses(filters);
   const deleteMutation = useDeleteExpense();
+  const updateMutation = useUpdateExpense();
 
   const handleDelete = (id: string) => {
     if (confirm("¿Estás seguro de que querés eliminar este gasto?")) {
@@ -44,12 +57,27 @@ export default function ExpensesPage() {
     }
   };
 
-  const handleEdit = (_expense: Expense) => {
-    console.log("Edit expense:", _expense);
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense);
+    setEditDescription(expense.description);
+    setEditAmount(String(expense.amount));
+    setEditCategory(expense.category);
+    setEditDate(expense.date);
+    setEditModalOpen(true);
   };
 
-  const hasSube = expenses.some((e) => e.category === "sube");
-  const subeCount = expenses.filter((e) => e.category === "sube").length;
+  const handleSaveEdit = () => {
+    if (!editingExpense) return;
+    updateMutation.mutate({
+      id: editingExpense.id,
+      data: {
+        description: editDescription,
+        amount: editAmount,
+        category: editCategory,
+        date: editDate,
+      },
+    }, { onSuccess: () => setEditModalOpen(false) });
+  };
 
   return (
     <DashboardTemplate
@@ -62,7 +90,7 @@ export default function ExpensesPage() {
         </Button>
       }
     >
-      <div className="mb-6 grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-6">
         <div className="space-y-2">
           <Label htmlFor="search">Buscar</Label>
           <Input
@@ -76,22 +104,53 @@ export default function ExpensesPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="month">Mes</Label>
-          <Select
-            value={filters.month}
-            onValueChange={(value) => setFilters((prev) => ({ ...prev, month: value }))}
-          >
-            <SelectTrigger id="month">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {months.map((m) => (
-                <SelectItem key={m.value} value={m.value}>
-                  {m.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="startDate">Desde</Label>
+          <Input
+            id="startDate"
+            type="date"
+            value={filters.startDate ?? ""}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, startDate: e.target.value || undefined }))
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="endDate">Hasta</Label>
+          <Input
+            id="endDate"
+            type="date"
+            value={filters.endDate ?? ""}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, endDate: e.target.value || undefined }))
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="minAmount">Monto mínimo</Label>
+          <Input
+            id="minAmount"
+            type="number"
+            placeholder="0"
+            value={filters.minAmount ?? ""}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, minAmount: e.target.value ? Number(e.target.value) : undefined }))
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="maxAmount">Monto máximo</Label>
+          <Input
+            id="maxAmount"
+            type="number"
+            placeholder="999999"
+            value={filters.maxAmount ?? ""}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, maxAmount: e.target.value ? Number(e.target.value) : undefined }))
+            }
+          />
         </div>
 
         <div className="space-y-2">
@@ -101,28 +160,24 @@ export default function ExpensesPage() {
             onValueChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
-                category: (value === "all" ? undefined : value) as ExpenseCategory | undefined,
+                category: value === "all" ? undefined : value,
               }))
             }
           >
             <SelectTrigger id="category">
               <SelectValue placeholder="Todas las categorías" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las categorías</SelectItem>
-              {Object.values(EXPENSE_CATEGORIES).map((cat) => (
-                <SelectItem key={cat.key} value={cat.key}>
-                  {cat.isSube ? (
+              <SelectContent>
+                <SelectItem value="all">Todas las categorías</SelectItem>
+                {Object.values(DEFAULT_CATEGORIES).map((cat) => (
+                  <SelectItem key={cat.key} value={cat.key}>
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-sube" />
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />
                       {cat.label}
                     </span>
-                  ) : (
-                    cat.label
-                  )}
-                </SelectItem>
-              ))}
-            </SelectContent>
+                  </SelectItem>
+                ))}
+              </SelectContent>
           </Select>
         </div>
 
@@ -138,15 +193,6 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {hasSube && subeCount > 2 && (
-        <AlertBanner
-          type="info"
-          title="Gastos SUBE detectados"
-          message={`Tenés ${subeCount} gastos de transporte este mes. Si superás el presupuesto, vas a recibir una alerta.`}
-          className="mb-4"
-        />
-      )}
-
       {isLoading ? (
         <div className="flex h-64 items-center justify-center text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -157,6 +203,34 @@ export default function ExpensesPage() {
       )}
 
       <AddExpenseModal open={addModalOpen} onOpenChange={setAddModalOpen} />
+
+      {/* Edit Expense Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Gasto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Monto</Label>
+              <Input type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoría</Label>
+              <Input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha</Label>
+              <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+            </div>
+            <Button onClick={handleSaveEdit} className="w-full">Guardar Cambios</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardTemplate>
   );
 }

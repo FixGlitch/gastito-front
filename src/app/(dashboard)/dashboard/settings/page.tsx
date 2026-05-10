@@ -37,7 +37,7 @@ export default function SettingsPage() {
       monthlySalary: 0,
       savingsPercentage: 20,
       inflationRate: 0,
-      quincenaDay: "1",
+      payday: 1,
     },
   });
 
@@ -46,7 +46,7 @@ export default function SettingsPage() {
       setValue("monthlySalary", Number(settings.monthlySalary));
       setValue("savingsPercentage", Number(settings.savingsPercentage));
       setValue("inflationRate", Number(settings.inflationAdjustmentPercent));
-      setValue("quincenaDay", String(settings.quincenaDay) as "1" | "15");
+      setValue("payday", settings.payday || 1);
     }
   }, [settings, setValue]);
 
@@ -57,10 +57,11 @@ export default function SettingsPage() {
 
   const onSubmit = (data: FinanceSettingsFormData) => {
     updateMutation.mutate({
-      monthlySalary: data.monthlySalary,
-      savingsPercentage: data.savingsPercentage,
-      inflationRate: data.inflationRate,
-    });
+      monthlySalary: Number(data.monthlySalary),
+      savingsPercentage: Number(data.savingsPercentage),
+      inflationRate: Number(data.inflationRate),
+      payday: Number(data.payday),
+    } as any);
   };
 
   if (settingsLoading) {
@@ -135,19 +136,18 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="quincenaDay">Día de cobro (quincena)</Label>
-                <Select
-                  value={watch("quincenaDay")}
-                  onValueChange={(v) => setValue("quincenaDay", v as "1" | "15")}
-                >
-                  <SelectTrigger id="quincenaDay">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1° de cada mes</SelectItem>
-                    <SelectItem value="15">15 de cada mes (quincena)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="payday">Día de cobro</Label>
+                <Input
+                  id="payday"
+                  type="number"
+                  min={1}
+                  max={31}
+                  placeholder="15"
+                  {...register("payday", { valueAsNumber: true })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Elegí el día del mes en que cobrás tu sueldo (1-31)
+                </p>
               </div>
 
               <div className="rounded-lg bg-muted/50 p-4 space-y-2">

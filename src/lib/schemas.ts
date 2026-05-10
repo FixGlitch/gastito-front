@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EXPENSE_CATEGORIES } from "@/types/expense";
+import { DEFAULT_CATEGORIES } from "@/types/expense";
 
 export const loginSchema = z.object({
   email: z
@@ -61,10 +61,33 @@ export const financeSettingsSchema = z.object({
     .number()
     .min(0, "La tasa no puede ser negativa")
     .max(100, "La tasa no puede superar el 100%"),
-  quincenaDay: z.enum(["1", "15"]).default("1"),
+  payday: z
+    .number()
+    .int("Debe ser un día válido")
+    .min(1, "El día debe ser entre 1 y 31")
+    .max(31, "El día debe ser entre 1 y 31")
+    .default(1),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type ExpenseFormData = z.infer<typeof expenseSchema>;
 export type FinanceSettingsFormData = z.infer<typeof financeSettingsSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.
+    string()
+    .min(1, "El correo electrónico es obligatorio")
+    .email("Ingresá un correo electrónico válido"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "El token es obligatorio"),
+  newPassword: z.
+    string()
+    .min(6, "La contraseña debe tener al menos 6 caracteres")
+    .max(100, "La contraseña no puede superar los 100 caracteres"),
+});
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;

@@ -4,6 +4,7 @@ export interface FinanceProfile {
   savingsPercentage: number;
   inflationAdjustmentPercent: number;
   quincenaDay: 1 | 15;
+  payday: number;
   lastInflationApplied: number | null;
   lastInflationAppliedDate: string | null;
   createdAt: string;
@@ -30,7 +31,29 @@ export interface FinanceSettings {
   monthlySalary: number;
   savingsPercentage: number;
   inflationRate: number;
-  quincenaDay: 1 | 15;
+  quincenaDay: number;
+  payday: number;
+}
+
+export interface Budget {
+  id: string;
+  period: "daily" | "weekly" | "monthly";
+  amount: number;
+  category: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface BudgetComparison {
+  budgetId: string;
+  category: string;
+  period: string;
+  budgeted: number;
+  spent: number;
+  remaining: number;
+  percentage: number;
 }
 
 export interface BudgetCategorySetting {

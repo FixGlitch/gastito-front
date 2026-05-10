@@ -73,7 +73,7 @@ export function useCreateExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.budget.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.budgets });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.overview });
       toast.success("Gasto registrado correctamente");
     },
@@ -99,7 +99,7 @@ export function useUpdateExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.budget.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.budgets });
       toast.success("Gasto actualizado correctamente");
     },
     onError: (error: Error) => {
@@ -119,7 +119,7 @@ export function useDeleteExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.budget.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.budgets });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.overview });
       toast.success("Gasto eliminado correctamente");
     },

@@ -6,17 +6,79 @@ import { AlertBanner } from "@/components/organisms/alert-banner";
 import { SpendingTrendChart } from "@/components/organisms/spending-trend-chart";
 import { useDashboardOverview } from "@/lib/api/hooks/dashboard";
 import { formatARS } from "@/lib/format";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { useState } from "react";
 import { AddExpenseModal } from "@/components/molecules/add-expense-modal";
 import { ExpenseRow } from "@/components/molecules/expense-row";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
 import type { Expense as ExpenseType } from "@/types/expense";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { toast } from "@/lib/utils/toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/atoms/dialog";
+import { Input } from "@/components/atoms/input";
+import { Label } from "@/components/atoms/label";
+import { useUpdateExpense, useDeleteExpense } from "@/lib/api/hooks/expenses";
 
 export default function DashboardPage() {
   const { data, isLoading, isError } = useDashboardOverview();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ExpenseType | null>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  const updateExpenseMutation = useUpdateExpense();
+  const deleteExpenseMutation = useDeleteExpense();
+
+  const handleEditExpense = (expense: ExpenseType) => {
+    setEditingExpense(expense);
+    setEditDescription(expense.description);
+    setEditAmount(String(expense.amount));
+    setEditCategory(expense.category);
+    setEditDate(expense.date);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveExpense = () => {
+    if (!editingExpense) return;
+    updateExpenseMutation.mutate({
+      id: editingExpense.id,
+      data: {
+        description: editDescription,
+        amount: editAmount,
+        category: editCategory,
+        date: editDate,
+      },
+    }, { onSuccess: () => setEditModalOpen(false) });
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    if (confirm("¿Eliminar este gasto?")) {
+      deleteExpenseMutation.mutate(id);
+    }
+  };
+
+  useWebSocket({
+    onBudgetAlert: (alerts) => {
+      alerts.forEach((alert) => {
+        if (alert.type === "danger") {
+          toast.error(alert.message);
+        } else if (alert.type === "warning") {
+          toast.warning(alert.message);
+        } else {
+          toast.info(alert.message);
+        }
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -141,6 +203,8 @@ export default function DashboardPage() {
                   ...expense,
                   updatedAt: expense.createdAt,
                 } as ExpenseType}
+                onEdit={() => handleEditExpense(expense as ExpenseType)}
+                onDelete={() => handleDeleteExpense(expense.id)}
               />
             ))}
           </CardContent>
@@ -148,6 +212,34 @@ export default function DashboardPage() {
       )}
 
       <AddExpenseModal open={addModalOpen} onOpenChange={setAddModalOpen} />
+
+      {/* Edit Expense Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Gasto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Monto</Label>
+              <Input type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoría</Label>
+              <Input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha</Label>
+              <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+            </div>
+            <Button onClick={handleSaveExpense} className="w-full">Guardar Cambios</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardTemplate>
   );
 }

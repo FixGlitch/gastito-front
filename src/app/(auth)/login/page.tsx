@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormData } from "@/lib/schemas";
-import { useLogin } from "@/lib/api/hooks/auth";
+import { useLogin, useAuthUser, useAuthIsAuthenticated } from "@/lib/api/hooks/auth";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
@@ -11,8 +11,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Wallet, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/molecules/theme-toggle";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const user = useAuthUser();
+  const isAuthenticated = useAuthIsAuthenticated();
+  const router = useRouter();
+
+  // If already authenticated, redirect based on role
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === "admin") {
+        router.push("/admin/users");
+      } else {
+        router.push("/dashboard");
+      }
+    }
+  }, [isAuthenticated, user, router]);
+
   const loginMutation = useLogin();
 
   const {
@@ -102,6 +119,11 @@ export default function LoginPage() {
               ¿No tenés cuenta?{" "}
               <Link href="/register" className="font-medium text-primary hover:underline">
                 Crear cuenta
+              </Link>
+            </p>
+            <p className="mt-2">
+              <Link href="/forgot-password" className="font-medium text-primary hover:underline">
+                ¿Olvidaste tu contraseña?
               </Link>
             </p>
           </div>

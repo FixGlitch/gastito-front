@@ -1,24 +1,13 @@
-export type ExpenseCategory =
-  | "alimentos"
-  | "transporte"
-  | "sube"
-  | "servicios"
-  | "entretenimiento"
-  | "salud"
-  | "educacion"
-  | "hogar"
-  | "ropa"
-  | "otros";
+export type ExpenseCategory = string;
 
 export interface CategoryConfig {
   key: string;
   label: string;
   icon: string;
   color: string;
-  isSube?: boolean;
 }
 
-export const EXPENSE_CATEGORIES: Record<ExpenseCategory, CategoryConfig> = {
+export const DEFAULT_CATEGORIES: Record<string, CategoryConfig> = {
   alimentos: {
     key: "alimentos",
     label: "Alimentos",
@@ -31,12 +20,11 @@ export const EXPENSE_CATEGORIES: Record<ExpenseCategory, CategoryConfig> = {
     icon: "car",
     color: "#8B5CF6",
   },
-  sube: {
-    key: "sube",
-    label: "SUBE",
+  suscripciones: {
+    key: "suscripciones",
+    label: "Suscripciones",
     icon: "bus",
     color: "#2563EB",
-    isSube: true,
   },
   servicios: {
     key: "servicios",
@@ -47,6 +35,12 @@ export const EXPENSE_CATEGORIES: Record<ExpenseCategory, CategoryConfig> = {
   entretenimiento: {
     key: "entretenimiento",
     label: "Entretenimiento",
+    icon: "gamepad-2",
+    color: "#EC4899",
+  },
+  ocio: {
+    key: "ocio",
+    label: "Ocio",
     icon: "gamepad-2",
     color: "#EC4899",
   },
@@ -103,4 +97,8 @@ export interface ExpenseFilters {
   category?: string;
   month?: string;
   search?: string;
+  startDate?: string;
+  endDate?: string;
+  minAmount?: number;
+  maxAmount?: number;
 }

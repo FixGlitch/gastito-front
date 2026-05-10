@@ -24,6 +24,7 @@ import {
   Plus,
   Trash2,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -42,6 +43,11 @@ export default function SavingsPage() {
   const deleteGoalMutation = useDeleteSavingsGoal();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<any>(null);
+  const [editName, setEditName] = useState("");
+  const [editCurrentAmount, setEditCurrentAmount] = useState("");
+  const [editTargetAmount, setEditTargetAmount] = useState("");
   const [newGoalName, setNewGoalName] = useState("");
   const [newGoalAmount, setNewGoalAmount] = useState("");
 
@@ -66,6 +72,26 @@ export default function SavingsPage() {
         },
       },
     );
+  };
+
+  const handleEditGoal = (goal: any) => {
+    setEditingGoal(goal);
+    setEditName(goal.name);
+    setEditCurrentAmount(String(goal.currentAmount));
+    setEditTargetAmount(String(goal.targetAmount));
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingGoal) return;
+    updateGoalMutation.mutate({
+      id: editingGoal.id,
+      data: {
+        name: editName,
+        currentAmount: parseFloat(editCurrentAmount),
+        targetAmount: parseFloat(editTargetAmount),
+      },
+    }, { onSuccess: () => setEditModalOpen(false) });
   };
 
   return (
@@ -135,14 +161,24 @@ export default function SavingsPage() {
                           : "Sin fecha límite"}
                       </CardDescription>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => deleteGoalMutation.mutate(goal.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleEditGoal(goal)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => deleteGoalMutation.mutate(goal.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -248,6 +284,30 @@ export default function SavingsPage() {
               Crear meta
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Savings Goal Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Meta de Ahorro</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Monto Actual</Label>
+              <Input type="number" value={editCurrentAmount} onChange={(e) => setEditCurrentAmount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Monto Objetivo</Label>
+              <Input type="number" value={editTargetAmount} onChange={(e) => setEditTargetAmount(e.target.value)} />
+            </div>
+            <Button onClick={handleSaveEdit} className="w-full">Guardar Cambios</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardTemplate>
